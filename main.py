@@ -1,10 +1,14 @@
 import asyncio
+import logging
+import os
 from aiogram import Bot, Dispatcher, F, types
 from aiogram.filters import Command, CommandStart
 from aiogram.types import Message
-from config import BOT_TOKEN, ADMIN_ID
+from config import BOT_TOKEN, ADMIN_ID, WEBHOOK_URL, PORT
 from database import init_db, add_user, list_users, delete_user, find_user
 from utils import clean_name
+
+logging.basicConfig(level=logging.INFO)
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
@@ -94,15 +98,3 @@ async def get_user(message: Message):
         login, parol, rol = user
         await message.answer(f"👤 {parts[0].title()} {parts[1].title()} ({rol})\n"
                              f"🔑 Login: {login}\n"
-                             f"🔒 Parol: {parol}")
-    else:
-        await message.answer("❌ Bunday foydalanuvchi topilmadi.")
-
-# === Botni ishga tushirish ===
-async def main():
-    init_db()
-    print("🤖 Bot ishga tushdi...")
-    await dp.start_polling(bot)
-
-if __name__ == "__main__":
-    asyncio.run(main())
