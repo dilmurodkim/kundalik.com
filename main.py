@@ -3,9 +3,6 @@ import logging
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import Command, CommandStart
 from aiogram.types import Message
-from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
-from aiohttp import web
-
 from config import BOT_TOKEN, ADMIN_ID, WEBHOOK_URL, PORT
 from database import init_db, add_user, list_users, delete_user, find_user
 from utils import clean_name
@@ -18,10 +15,8 @@ dp = Dispatcher()
 # === Start komandasi ===
 @dp.message(CommandStart())
 async def cmd_start(message: Message):
-    await message.answer(
-        "👋 Salom! Ismingiz va familyangizni kiriting:\n"
-        "Masalan: `Ali Karimov` yoki `Karimov Ali`"
-    )
+    await message.answer("👋 Salom! Ismingiz va familyangizni kiriting:\n"
+                         "Masalan: `Ali Karimov` yoki `Karimov Ali`")
 
 # === O‘quvchi qo‘shish ===
 @dp.message(Command("add_student"))
@@ -63,11 +58,9 @@ async def cmd_list(message: Message):
 
     text = "📋 Foydalanuvchilar ro‘yxati:\n\n"
     for i, (ism, familya, login, parol, rol) in enumerate(users, start=1):
-        text += (
-            f"{i}. 👤 {ism.title()} {familya.title()}\n"
-            f"   🎓 Rol: {rol}\n"
-            f"   🔑 Login: {login} | Parol: {parol}\n\n"
-        )
+        text += (f"{i}. 👤 {ism.title()} {familya.title()}\n"
+                 f"   🎓 Rol: {rol}\n"
+                 f"   🔑 Login: {login} | Parol: {parol}\n\n")
     await message.answer(text)
 
 # === O‘chirish ===
@@ -102,11 +95,9 @@ async def get_user(message: Message):
 
     if user:
         login, parol, rol = user
-        await message.answer(
-            f"👤 {parts[0].title()} {parts[1].title()} ({rol})\n"
-            f"🔑 Login: {login}\n"
-            f"🔒 Parol: {parol}"
-        )
+        await message.answer(f"👤 {parts[0].title()} {parts[1].title()} ({rol})\n"
+                             f"🔑 Login: {login}\n"
+                             f"🔒 Parol: {parol}")
     else:
         await message.answer("❌ Bunday foydalanuvchi topilmadi.")
 
@@ -115,14 +106,17 @@ async def main():
     init_db()
     logging.info("🤖 Bot ishga tushdi (webhook)...")
 
+    # Webhookni sozlash
     await bot.set_webhook(WEBHOOK_URL)
 
-    app = web.Application()
-    SimpleRequestHandler(dispatcher=dp, bot=bot).register(app, path="")
-    setup_application(app, dp, bot=bot)
-
-    web.run_app(app, host="0.0.0.0", port=int(PORT))
+    # faqat start_webhook ishlatiladi
+    await dp.start_webhook(
+        bot=bot,
+        webhook_path="",
+        skip_updates=True,
+        host="0.0.0.0",
+        port=int(PORT),
+    )
 
 if __name__ == "__main__":
     asyncio.run(main())
- 
