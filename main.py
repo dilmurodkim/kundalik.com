@@ -1,8 +1,10 @@
 import asyncio
 import logging
 from aiogram import Bot, Dispatcher, F
-from aiogram.filters import Command, CommandStart
+from aiogram.filters import CommandStart, Command
 from aiogram.types import Message
+from aiohttp import web
+
 from config import BOT_TOKEN, ADMIN_ID, WEBHOOK_URL, PORT
 from database import init_db, add_user, list_users, delete_user, find_user
 from utils import clean_name
@@ -23,7 +25,6 @@ async def cmd_start(message: Message):
 async def add_student(message: Message):
     if message.from_user.id != ADMIN_ID:
         return await message.answer("⛔ Sizda ruxsat yo‘q!")
-
     try:
         _, ism, familya, login, parol = message.text.split()
     except:
@@ -37,7 +38,6 @@ async def add_student(message: Message):
 async def add_teacher(message: Message):
     if message.from_user.id != ADMIN_ID:
         return await message.answer("⛔ Sizda ruxsat yo‘q!")
-
     try:
         _, ism, familya, login, parol = message.text.split()
     except:
@@ -68,7 +68,6 @@ async def cmd_list(message: Message):
 async def cmd_delete(message: Message):
     if message.from_user.id != ADMIN_ID:
         return await message.answer("⛔ Sizda ruxsat yo‘q!")
-
     try:
         _, ism, familya = message.text.split()
     except:
@@ -89,10 +88,7 @@ async def get_user(message: Message):
 
     a, b = clean_name(parts[0]), clean_name(parts[1])
 
-    user = find_user(a, b)
-    if not user:
-        user = find_user(b, a)
-
+    user = find_user(a, b) or find_user(b, a)
     if user:
         login, parol, rol = user
         await message.answer(f"👤 {parts[0].title()} {parts[1].title()} ({rol})\n"
@@ -101,22 +97,29 @@ async def get_user(message: Message):
     else:
         await message.answer("❌ Bunday foydalanuvchi topilmadi.")
 
-# === Webhook bilan botni ishga tushirish ===
+# === Webhook handler ===
+async def handle(request):
+    update = await request.json()
+    await dp.feed_webhook_update(bot, update)
+    return web.Response()
+
+# === Asosiy ishga tushirish ===
 async def main():
     init_db()
-    logging.info("🤖 Bot ishga tushdi (webhook)...")
+    app = web.Application()
+    app.router.add_post("/webhook", handle)
 
-    # Webhookni sozlash
+    # Telegram webhookni sozlash
     await bot.set_webhook(WEBHOOK_URL)
 
-    # faqat start_webhook ishlatiladi
-    await dp.start_webhook(
-        bot=bot,
-        webhook_path="",
-        skip_updates=True,
-        host="0.0.0.0",
-        port=int(PORT),
-    )
+    logging.info("🤖 Bot webhook rejimida ishlayapti...")
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, "0.0.0.0", PORT)
+    await site.start()
+
+    while True:
+        await asyncio.sleep(3600)
 
 if __name__ == "__main__":
     asyncio.run(main())
