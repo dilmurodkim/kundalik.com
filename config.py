@@ -1,3 +1,4 @@
-BOT_TOKEN = "8043805615:AAEgc42hN8wmOuhV3Ke5393ytot7IFlpyLQ"
-ADMIN_ID = 7766045121  # Admin Telegram ID
-DB_NAME = "school.db"
+BOT_TOKEN=8043805615:AAEgc42hN8wmOuhV3Ke5393ytot7IFlpyLQ
+ADMIN_ID=7766045121
+WEBHOOK_URL=https://your-app.onrender.com/webhook
+PORT=8080
